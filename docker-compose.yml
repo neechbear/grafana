@@ -1,0 +1,42 @@
+influxdb:
+  image: influxdb:alpine
+  container_name: influxdb
+  restart: always
+  ports:
+    - "8083:8083"
+    - "8086:8086"
+    - "8090:8090"
+  environment:
+    - INFLUXDB_DATA_ENGINE=tsm1
+    - INFLUXDB_REPORTING_DISABLED=false
+  volumes:
+    - influxdb:/var/lib/influxdb
+
+telegraf:
+  image: telegraf:alpine
+  container_name: telegraf
+  restart: always
+  links:
+    - influxdb
+  volumes:
+    - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    - /sys:/rootfs/sys:ro
+    - /proc:/rootfs/proc:ro
+    - /etc:/rootfs/etc:ro
+  environment:
+    HOST_PROC: /rootfs/proc
+    HOST_SYS: /rootfs/sys
+    HOST_ETC: /rootfs/etc
+  hostname: myhostname
+
+grafana:
+  image: grafana/grafana:latest
+  container_name: grafana
+  restart: always
+  ports:
+    - "3000:3000"
+  environment:
+    - GF_INSTALL_PLUGINS=grafana-clock-panel,briangann-gauge-panel,natel-plotly-panel,grafana-simple-json-datasource
+  links:
+    - influxdb
